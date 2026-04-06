@@ -3,148 +3,423 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart To-Do List - Apple Notes Import</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Smart Todo App</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .input-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 50px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #taskInput:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        #addBtn {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        #addBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        #addBtn:active {
+            transform: translateY(0);
+        }
+
+        .tasks-section {
+            padding: 30px;
+            min-height: 300px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #8e9aaf;
+            padding: 50px 20px;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
         .task-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+            animation: slideIn 0.3s ease;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .task-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            margin-right: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .task-checkbox.completed {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-color: #4facfe;
+        }
+
+        .task-checkbox.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 16px;
+            color: #2c3e50;
             transition: all 0.3s ease;
         }
-        .task-item:hover {
-            transform: translateX(4px);
+
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #95a5a6;
         }
-        .completed {
-            opacity: 0.6;
-        }
-        .upload-area {
-            border: 2px dashed #cbd5e1;
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
             transition: all 0.3s ease;
+            opacity: 0.7;
         }
-        .upload-area:hover {
-            border-color: #3b82f6;
-            background-color: #f8fafc;
+
+        .delete-btn:hover {
+            opacity: 1;
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
         }
-        .upload-area.dragover {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
-        }
-        .progress-bar {
-            transition: width 0.3s ease;
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .input-section {
+                padding: 20px;
+            }
+
+            .tasks-section {
+                padding: 20px;
+            }
+
+            .input-container {
+                flex-direction: column;
+            }
+
+            #addBtn {
+                width: 100%;
+                padding: 15px;
+            }
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">
-                <i class="fas fa-clipboard-list text-blue-600 mr-3"></i>
-                Smart To-Do List
-            </h1>
-            <p class="text-gray-600">Organize your tasks • Import from Apple Notes screenshots</p>
-        </div>
-
-        <!-- Add Task Form -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex gap-3">
-                <input 
-                    type="text" 
-                    id="taskInput" 
-                    placeholder="Add a new task..." 
-                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    onkeypress="handleKeyPress(event)"
-                >
-                <button 
-                    onclick="addTask()" 
-                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
-                >
-                    <i class="fas fa-plus mr-2"></i>Add Task
-                </button>
-            </div>
-        </div>
-
-        <!-- Apple Notes Import Section -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                <i class="fas fa-camera text-green-600 mr-2"></i>
-                Import from Apple Notes Screenshot
-            </h2>
-            
-            <div class="upload-area rounded-lg p-8 text-center mb-4" id="uploadArea">
-                <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
-                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600 mb-2">Drag and drop a screenshot here, or click to select</p>
-                <p class="text-sm text-gray-500">Supports PNG, JPG, JPEG, WebP</p>
-                <button onclick="document.getElementById('fileInput').click()" class="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    <i class="fas fa-folder-open mr-2"></i>Choose File
-                </button>
-            </div>
-
-            <!-- Progress Bar -->
-            <div id="progressContainer" class="hidden mb-4">
-                <div class="bg-gray-200 rounded-full h-2">
-                    <div id="progressBar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Smart Todo</h1>
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-number" id="totalTasks">0</span>
+                    <span class="stat-label">Total</span>
                 </div>
-                <p id="progressText" class="text-sm text-gray-600 mt-2">Processing image...</p>
-            </div>
-
-            <!-- Preview Area -->
-            <div id="previewArea" class="hidden">
-                <h3 class="font-semibold text-gray-700 mb-2">Extracted Tasks:</h3>
-                <div id="extractedTasks" class="bg-gray-50 rounded-lg p-4 mb-4"></div>
-                <button onclick="importExtractedTasks()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-download mr-2"></i>Import Tasks
-                </button>
-            </div>
-        </div>
-
-        <!-- Task List -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-800">
-                    <i class="fas fa-tasks text-purple-600 mr-2"></i>
-                    Your Tasks
-                </h2>
-                <div class="flex gap-2">
-                    <button onclick="filterTasks('all')" id="filterAll" class="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">All</button>
-                    <button onclick="filterTasks('active')" id="filterActive" class="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">Active</button>
-                    <button onclick="filterTasks('completed')" id="filterCompleted" class="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">Completed</button>
+                <div class="stat">
+                    <span class="stat-number" id="completedTasks">0</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="pendingTasks">0</span>
+                    <span class="stat-label">Pending</span>
                 </div>
             </div>
-            
-            <div id="taskList" class="space-y-2">
-                <!-- Tasks will be dynamically added here -->
-            </div>
-            
-            <div id="emptyState" class="text-center py-12 text-gray-500">
-                <i class="fas fa-clipboard text-4xl mb-4"></i>
-                <p>No tasks yet. Add one above or import from a screenshot!</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-container">
+                <input type="text" id="taskInput" placeholder="What needs to be done?" maxlength="100">
+                <button id="addBtn">Add Task</button>
             </div>
         </div>
 
-        <!-- Task Stats -->
-        <div class="mt-6 bg-white rounded-lg shadow-md p-4">
-            <div class="flex justify-between text-sm text-gray-600">
-                <span>Total: <span id="totalTasks" class="font-semibold">0</span></span>
-                <span>Active: <span id="activeTasks" class="font-semibold">0</span></span>
-                <span>Completed: <span id="completedTasks" class="font-semibold">0</span></span>
+        <div class="tasks-section">
+            <div id="emptyState" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17l-5-5 1.41-1.41L9 14.17l7.59-7.59L18 8l-9 9z"/>
+                </svg>
+                <h3>No tasks yet</h3>
+                <p>Add your first task above to get started!</p>
             </div>
+            <div id="tasksList"></div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
-    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 class="text-lg font-semibold mb-4">Edit Task</h3>
-            <input type="text" id="editInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
-            <div class="flex gap-3 justify-end">
-                <button onclick="closeEditModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">Cancel</button>
-                <button onclick="saveEdit()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Save</button>
-            </div>
-        </div>
-    </div>
+    <script>
+        class TodoApp {
+            constructor() {
+                this.tasks = this.loadTasks();
+                this.taskIdCounter = this.getNextId();
+                this.init();
+            }
 
-    <script src="app.js"></script>
+            init() {
+                this.bindEvents();
+                this.render();
+                this.updateStats();
+            }
+
+            bindEvents() {
+                const taskInput = document.getElementById('taskInput');
+                const addBtn = document.getElementById('addBtn');
+
+                addBtn.addEventListener('click', () => this.addTask());
+                taskInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.addTask();
+                    }
+                });
+            }
+
+            addTask() {
+                const taskInput = document.getElementById('taskInput');
+                const text = taskInput.value.trim();
+
+                if (text === '') {
+                    taskInput.focus();
+                    return;
+                }
+
+                const task = {
+                    id: this.taskIdCounter++,
+                    text: text,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+
+                this.tasks.push(task);
+                this.saveTasks();
+                taskInput.value = '';
+                this.render();
+                this.updateStats();
+            }
+
+            toggleTask(id) {
+                const task = this.tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    this.saveTasks();
+                    this.render();
+                    this.updateStats();
+                }
+            }
+
+            deleteTask(id) {
+                this.tasks = this.tasks.filter(t => t.id !== id);
+                this.saveTasks();
+                this.render();
+                this.updateStats();
+            }
+
+            render() {
+                const tasksList = document.getElementById('tasksList');
+                const emptyState = document.getElementById('emptyState');
+
+                if (this.tasks.length === 0) {
+                    emptyState.style.display = 'block';
+                    tasksList.innerHTML = '';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                tasksList.innerHTML = this.tasks.map(task => `
+                    <div class="task-item">
+                        <div class="task-checkbox ${task.completed ? 'completed' : ''}" 
+                             onclick="todoApp.toggleTask(${task.id})"></div>
+                        <div class="task-text ${task.completed ? 'completed' : ''}">${this.escapeHtml(task.text)}</div>
+                        <button class="delete-btn" onclick="todoApp.deleteTask(${task.id})">Delete</button>
+                    </div>
+                `).join('');
+            }
+
+            updateStats() {
+                const total = this.tasks.length;
+                const completed = this.tasks.filter(t => t.completed).length;
+                const pending = total - completed;
+
+                document.getElementById('totalTasks').textContent = total;
+                document.getElementById('completedTasks').textContent = completed;
+                document.getElementById('pendingTasks').textContent = pending;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            saveTasks() {
+                try {
+                    localStorage.setItem('todoApp_tasks', JSON.stringify(this.tasks));
+                    localStorage.setItem('todoApp_counter', this.taskIdCounter.toString());
+                } catch (e) {
+                    console.warn('Could not save to localStorage:', e);
+                }
+            }
+
+            loadTasks() {
+                try {
+                    const saved = localStorage.getItem('todoApp_tasks');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    console.warn('Could not load from localStorage:', e);
+                    return [];
+                }
+            }
+
+            getNextId() {
+                try {
+                    const saved = localStorage.getItem('todoApp_counter');
+                    return saved ? parseInt(saved, 10) : 1;
+                } catch (e) {
+                    return 1;
+                }
+            }
+        }
+
+        // Initialize the app
+        const todoApp = new TodoApp();
+    </script>
 </body>
 </html>
